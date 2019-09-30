@@ -64,7 +64,7 @@ Output:
 ```bash
 keys: [1000 999 998 997 996 995 994 993 992 991 990 989 988 987 986 985 984 983 982 981 980 979 978 977 976 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1]
 ```
-So, we have collection with most usage items and recently usage.
+So, we have collection with most usage and recently usage items.
 
 #### Benchmark
 ```bash
