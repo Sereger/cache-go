@@ -150,7 +150,12 @@ func (c *ARCCache) purge() {
 			return true
 		}
 
+		if v1.reading == v2.reading {
+			return v1.age > v2.age
+		}
+
 		return v1.reading > v2.reading
+
 	})
 	ageSlice := c.buff[len(c.buff)/4:]
 	sort.Slice(ageSlice, func(i, j int) bool {
