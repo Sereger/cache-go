@@ -17,14 +17,8 @@ type SimpleData struct {
 }
 
 func main() {
-	c1, err := arc.New(128)
-	if err != nil {
-		log.Fatal(err)
-	}
-	c2, err := arc.New(128)
-	if err != nil {
-		log.Fatal(err)
-	}
+	c1 := arc.New(128)
+	c2 := arc.New(128)
 
 	gc := cacheGC.New(c1, c2)
 	defer gc.Close()
@@ -39,7 +33,7 @@ func main() {
 So, what's so special about the `ARC` cache?
 See example:
 ```go
-cache, _ := New(100)
+cache := New(100)
 for i := 1000; i > 0; i-- {
     key := strconv.Itoa(i)
     cache.Store(key, i)
@@ -69,11 +63,16 @@ So, we have collection with most usage and recently usage items.
 #### Benchmark
 ```bash
 pkg: github.com/Sereger/cache-go/arc
-BenchmarkArc/storing-4           3000000               475 ns/op             208 B/op          3 allocs/op
-BenchmarkArc/loading-4          30000000                48.1 ns/op             0 B/op          0 allocs/op
+BenchmarkArc/storing-4           2000000               721 ns/op             223 B/op          4 allocs/op
+BenchmarkArc/loading-4          20000000              59.6 ns/op               7 B/op          0 allocs/op
 
 pkg: github.com/Sereger/cache-go/lru
-BenchmarkLRU/storing-4           5000000               382 ns/op             160 B/op          2 allocs/op
-BenchmarkLRU/loading-4          30000000                41.9 ns/op             0 B/op          0 allocs/op
+BenchmarkLRU/storing-4           2000000               650 ns/op             280 B/op          4 allocs/op
+BenchmarkLRU/loading-4          30000000              53.3 ns/op               7 B/op          0 allocs/op
+
+pkg: github.com/Sereger/cache-go/cycle
+BenchmarkCycle/storing-4         5000000               390 ns/op              79 B/op          2 allocs/op
+BenchmarkCycle/loading-4        20000000              76.8 ns/op               7 B/op          0 allocs/op
+
 ```
 

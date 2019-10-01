@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/Sereger/cache-go/arc"
 	cacheGC "github.com/Sereger/cache-go/gc"
-	"log"
 	"time"
 )
 
@@ -12,14 +11,8 @@ type SimpleData struct {
 }
 
 func main() {
-	c1, err := arc.New(128)
-	if err != nil {
-		log.Fatal(err)
-	}
-	c2, err := arc.New(128)
-	if err != nil {
-		log.Fatal(err)
-	}
+	c1 := arc.New(128)
+	c2 := arc.New(128)
 
 	gc := cacheGC.New(c1, c2)
 	defer gc.Close()

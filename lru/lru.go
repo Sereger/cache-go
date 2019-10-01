@@ -1,7 +1,6 @@
 package lru
 
 import (
-	"errors"
 	cacheGo "github.com/Sereger/cache-go"
 	"sort"
 	"sync"
@@ -27,15 +26,15 @@ type (
 	}
 )
 
-func New(n int) (*LRUCache, error) {
+func New(n int) *LRUCache {
 	if n < 8 {
-		return nil, errors.New("buffer size should be most or equal 8")
+		n = 8
 	}
 	return &LRUCache{
 		keyMap: make(map[string]int),
 		buff:   make([]*cell, n),
 		age:    1,
-	}, nil
+	}
 }
 
 func (c *LRUCache) Keys() []string {
@@ -56,6 +55,12 @@ func (c *LRUCache) Store(key string, val interface{}, opts ...cacheGo.ValueOptio
 
 	for _, opt := range opts {
 		opt(v)
+	}
+
+	i, ok := c.keyMap[key]
+	if ok {
+		c.buff[i] = v
+		return
 	}
 
 	if c.idx == len(c.buff) {

@@ -1,7 +1,6 @@
 package arc
 
 import (
-	"errors"
 	cacheGo "github.com/Sereger/cache-go"
 	"sort"
 	"sync"
@@ -28,15 +27,15 @@ type (
 	}
 )
 
-func New(n int) (*ARCCache, error) {
+func New(n int) *ARCCache {
 	if n < 8 {
-		return nil, errors.New("buffer size should be most or equal 8")
+		n = 8
 	}
 	return &ARCCache{
 		keyMap: make(map[string]int),
 		buff:   make([]*cell, n),
 		age:    1,
-	}, nil
+	}
 }
 
 func (c *ARCCache) Keys() []string {
@@ -57,6 +56,12 @@ func (c *ARCCache) Store(key string, val interface{}, opts ...cacheGo.ValueOptio
 
 	for _, opt := range opts {
 		opt(v)
+	}
+
+	i, ok := c.keyMap[key]
+	if ok {
+		c.buff[i] = v
+		return
 	}
 
 	if c.idx == len(c.buff) {

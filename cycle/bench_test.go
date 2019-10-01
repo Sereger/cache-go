@@ -1,11 +1,11 @@
-package arc
+package cycle
 
 import (
 	"strconv"
 	"testing"
 )
 
-func BenchmarkArc(b *testing.B) {
+func BenchmarkCycle(b *testing.B) {
 	cache := New(b.N/4 + 8)
 
 	b.Run("storing", func(b *testing.B) {

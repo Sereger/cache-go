@@ -6,7 +6,7 @@ import (
 )
 
 func TestLRUCache(t *testing.T) {
-	cache, _ := New(100)
+	cache := New(100)
 	for i := 1000; i > 0; i-- {
 		key := strconv.Itoa(i)
 		cache.Store(key, i)
@@ -16,14 +16,12 @@ func TestLRUCache(t *testing.T) {
 	}
 	cache.Purge()
 
-	expectKeys := []string{
-		"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", // resent usage
-	}
-
-	for _, key := range expectKeys {
+	// after cache.Purge cache have only half of values
+	for i := 1; i <= 51; i++ {
+		key := strconv.Itoa(i)
 		_, ok := cache.Load(key)
 		if !ok {
-			t.Fatalf("key [%s] not exists", key)
+			t.Fatalf("key [%s] not exists\nkeys:%v", key, cache.Keys())
 		}
 	}
 }

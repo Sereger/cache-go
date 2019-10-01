@@ -6,10 +6,7 @@ import (
 )
 
 func BenchmarkLRU(b *testing.B) {
-	cache, err := New(b.N + 8)
-	if err != nil {
-		b.Fatal(err)
-	}
+	cache := New(b.N + 8)
 
 	b.Run("storing", func(b *testing.B) {
 		b.RunParallel(func(pb *testing.PB) {
@@ -17,6 +14,7 @@ func BenchmarkLRU(b *testing.B) {
 			for pb.Next() {
 				key := strconv.Itoa(i)
 				cache.Store(key, i)
+				i++
 			}
 		})
 	})
@@ -26,6 +24,7 @@ func BenchmarkLRU(b *testing.B) {
 			for pb.Next() {
 				key := strconv.Itoa(i)
 				cache.Load(key)
+				i++
 			}
 		})
 	})
