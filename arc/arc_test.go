@@ -13,12 +13,15 @@ func TestARCCache(t *testing.T) {
 		for j := 0; j < i/3; j++ {
 			cache.Load(key)
 		}
+		if i%3 == 0 {
+			cache.Remove(key)
+		}
 	}
 	cache.Purge()
 
 	expectKeys := []string{
-		"1000", "999", "998", "997", "996", "995", "994", "993", "992", "991", "990", // most usage
-		"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", // resent usage
+		"1000", "998", "997", "995", "994", "992", "991", // most usage
+		"1", "2", "4", "5", "7", "8", "10", // resent usage
 	}
 
 	for _, key := range expectKeys {

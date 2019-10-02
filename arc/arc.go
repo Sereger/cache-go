@@ -67,6 +67,11 @@ func (c *ARCCache) Store(key string, val interface{}, opts ...cacheGo.ValueOptio
 	if c.idx == len(c.buff) {
 		c.purge()
 	}
+	old := c.buff[c.idx]
+	if old != nil {
+		delete(c.keyMap, old.key)
+	}
+
 	c.keyMap[key] = c.idx
 	c.buff[c.idx] = v
 	c.idx++
@@ -155,35 +160,35 @@ func (c *ARCCache) purge() {
 			return true
 		}
 
-		if v1.reading == v2.reading {
-			return v1.age > v2.age
+		k := float64(v1.reading) / float64(v1.reading+v2.reading)
+		if k > 0.35 && k < 0.65 {
+			return v1.age < v2.age
 		}
 
 		return v1.reading > v2.reading
-
 	})
-	ageSlice := c.buff[len(c.buff)/4:]
+	ageSlice := c.buff[len(c.buff)/2:]
 	sort.Slice(ageSlice, func(i, j int) bool {
 		v1, v2 := ageSlice[i], ageSlice[j]
 
 		if v1 == nil && v2 != nil {
-			return false
+			return true
 		} else if v2 == nil && v1 != nil {
-			return true
+			return false
 		} else if v2 == nil && v1 == nil {
-			return true
+			return false
 		}
 
 		rm1, rm2 := v1.isRemoved(), v2.isRemoved()
 		if rm1 && !rm2 {
-			return false
+			return true
 		} else if !rm1 && rm2 {
-			return true
+			return false
 		} else if rm1 && rm2 {
-			return true
+			return false
 		}
 
-		return v1.age > v2.age
+		return v1.age < v2.age
 	})
 
 	lastIdx := len(c.buff)/2 + 1
@@ -198,13 +203,14 @@ func (c *ARCCache) purge() {
 	}
 
 	c.idx = lastIdx
-	newMap := make(map[string]int, lastIdx)
 
-	for i := 0; i < lastIdx; i++ {
-		v := c.buff[i]
-		newMap[v.key] = i
+	for i, v := range c.buff {
+		if v.removed == 1 {
+			delete(c.keyMap, v.key)
+			continue
+		}
+		c.keyMap[v.key] = i
 	}
-	c.keyMap = newMap
 }
 
 func (c *cell) markRemoved() {
