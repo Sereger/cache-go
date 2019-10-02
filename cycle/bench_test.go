@@ -6,7 +6,7 @@ import (
 )
 
 func BenchmarkCycle(b *testing.B) {
-	cache := New(b.N/4 + 8)
+	cache := New(32)
 
 	b.Run("storing", func(b *testing.B) {
 		b.RunParallel(func(pb *testing.PB) {

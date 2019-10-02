@@ -191,7 +191,10 @@ func (c *ARCCache) purge() {
 		return v1.age < v2.age
 	})
 
-	lastIdx := len(c.buff)/2 + 1
+	lastIdx := len(c.buff) / 2
+	if lastIdx < 1 {
+		lastIdx = len(c.buff)
+	}
 	v := c.buff[lastIdx-1]
 	for v == nil || v.isRemoved() {
 		lastIdx--
