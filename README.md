@@ -63,8 +63,8 @@ So, we have collection with most usage and recently usage items.
 #### Benchmark
 ```bash
 pkg: github.com/Sereger/cache-go/arc
-BenchmarkArc/storing-4           2000000               721 ns/op             223 B/op          4 allocs/op
-BenchmarkArc/loading-4          20000000              59.6 ns/op               7 B/op          0 allocs/op
+BenchmarkArc/storing-4           3000000               552 ns/op             138 B/op          4 allocs/op
+BenchmarkArc/loading-4          30000000                54.4 ns/op             7 B/op          0 allocs/op
 
 pkg: github.com/Sereger/cache-go/lru
 BenchmarkLRU/storing-4           2000000               650 ns/op             280 B/op          4 allocs/op
