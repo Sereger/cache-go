@@ -61,18 +61,36 @@ keys: [1000 999 998 997 996 995 994 993 992 991 990 989 988 987 986 985 16 15 14
 So, we have collection with most usage and recently usage items.
 
 #### Benchmark
-This results on MacBook Pro (15-inch, Mid 2015)
+This results on MacBook Pro (13-inch, 2019)
 ```bash
 pkg: github.com/Sereger/cache-go/arc
-BenchmarkArc/storing-8           1957212               631 ns/op             104 B/op          3 allocs/op
-BenchmarkArc/loading-8          20467015              59.6 ns/op               7 B/op          0 allocs/op
-
-pkg: github.com/Sereger/cache-go/lru
-BenchmarkCycle/storing-8         2313512               475 ns/op              81 B/op          3 allocs/op
-BenchmarkCycle/loading-8        20757928              58.6 ns/op               7 B/op          0 allocs/op
+BenchmarkArc/size___32/storing-8         2901594               415 ns/op             104 B/op          3 allocs/op
+BenchmarkArc/size___32/loading-8        25883810                46.9 ns/op             7 B/op          0 allocs/op
+BenchmarkArc/size__256/storing-8         2731152               440 ns/op              97 B/op          3 allocs/op
+BenchmarkArc/size__256/loading-8        25534323                47.6 ns/op             7 B/op          0 allocs/op
+BenchmarkArc/size_1024/storing-8         2560555               473 ns/op              96 B/op          3 allocs/op
+BenchmarkArc/size_1024/loading-8        25559084                48.7 ns/op             7 B/op          0 allocs/op
+BenchmarkArc/size_8192/storing-8         2480404               497 ns/op              96 B/op          3 allocs/op
+BenchmarkArc/size_8192/loading-8        24895506                51.2 ns/op             7 B/op          0 allocs/op
 
 pkg: github.com/Sereger/cache-go/cycle
-BenchmarkLRU/storing-8           1671874               720 ns/op             293 B/op          3 allocs/op
-BenchmarkLRU/loading-8          20843748              58.4 ns/op               7 B/op          0 allocs/op
+BenchmarkCycle/size___32/storing-8       4127497               291 ns/op              82 B/op          3 allocs/op
+BenchmarkCycle/size___32/loading-8      26939912                46.9 ns/op             7 B/op          0 allocs/op
+BenchmarkCycle/size__256/storing-8       3946203               299 ns/op              81 B/op          3 allocs/op
+BenchmarkCycle/size__256/loading-8      26589692                47.1 ns/op             7 B/op          0 allocs/op
+BenchmarkCycle/size_1024/storing-8       3873979               316 ns/op              80 B/op          3 allocs/op
+BenchmarkCycle/size_1024/loading-8      26339017                48.7 ns/op             7 B/op          0 allocs/op
+BenchmarkCycle/size_8192/storing-8       3427587               359 ns/op              80 B/op          3 allocs/op
+BenchmarkCycle/size_8192/loading-8      25744363                50.8 ns/op             7 B/op          0 allocs/op
+
+pkg: github.com/Sereger/cache-go/lru
+BenchmarkLRU/size___32/storing-8         3237692               360 ns/op             100 B/op          3 allocs/op
+BenchmarkLRU/size___32/loading-8        28123472                44.8 ns/op             7 B/op          0 allocs/op
+BenchmarkLRU/size__256/storing-8         3393638               356 ns/op              97 B/op          3 allocs/op
+BenchmarkLRU/size__256/loading-8        28250967                45.2 ns/op             7 B/op          0 allocs/op
+BenchmarkLRU/size_1024/storing-8         3317509               373 ns/op              96 B/op          3 allocs/op
+BenchmarkLRU/size_1024/loading-8        28495053                46.3 ns/op             7 B/op          0 allocs/op
+BenchmarkLRU/size_8192/storing-8         3197606               402 ns/op              96 B/op          3 allocs/op
+BenchmarkLRU/size_8192/loading-8        25213560                50.3 ns/op             7 B/op          0 allocs/op
 ```
 

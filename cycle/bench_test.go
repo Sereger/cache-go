@@ -1,6 +1,7 @@
 package cycle
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 )
@@ -8,7 +9,8 @@ import (
 func BenchmarkCycle(b *testing.B) {
 	cases := []int{32, 256, 1024, 8192}
 	for _, pullSize := range cases {
-		b.Run("cache "+strconv.Itoa(pullSize), func(b *testing.B) {
+		name := fmt.Sprintf("size %4d", pullSize)
+		b.Run(name, func(b *testing.B) {
 			cache := New(pullSize)
 
 			b.Run("storing", func(b *testing.B) {

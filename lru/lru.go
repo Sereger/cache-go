@@ -2,6 +2,7 @@ package lru
 
 import (
 	cacheGo "github.com/Sereger/cache-go"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -13,14 +14,14 @@ type (
 		keyMap map[string]int
 		buff   []*cell
 		idx    int
-		rmCtn  uint32
 	}
 
 	cell struct {
-		key     string
-		value   interface{}
-		removed uint32
-		expired time.Time
+		key      string
+		value    interface{}
+		removed  uint32
+		lastRead int64
+		expired  time.Time
 	}
 )
 
@@ -74,7 +75,6 @@ func (c *Cache) Remove(key string) {
 	if !ok {
 		return
 	}
-	atomic.AddUint32(&c.rmCtn, 1)
 	v.markRemoved()
 }
 
@@ -93,7 +93,6 @@ func (c *Cache) loadActCell(key string) (*cell, bool) {
 	}
 
 	if !v.expired.IsZero() && v.expired.Before(time.Now()) {
-		atomic.AddUint32(&c.rmCtn, 1)
 		v.markRemoved()
 		return nil, false
 	}
@@ -106,7 +105,7 @@ func (c *Cache) Load(key string) (interface{}, bool) {
 	if !ok {
 		return nil, false
 	}
-
+	atomic.StoreInt64(&v.lastRead, time.Now().Unix())
 	return v.value, true
 }
 
@@ -125,56 +124,57 @@ func (c *Cache) Purge() {
 
 func (c *Cache) purge() {
 	c.idx = 0
-	if c.rmCtn == 0 {
-		return
-	}
-	c.rmCtn = 0
 	moment := time.Now()
-	var subIdx int
-	for i, v := range c.buff {
-		if v == nil {
-			c.idx = i
+	sort.Slice(c.buff, func(i, j int) bool {
+		v1, v2 := c.buff[i], c.buff[j]
+
+		if v1 == nil && v2 != nil {
+			return false
+		} else if v2 == nil && v1 != nil {
+			return true
+		} else if v2 == nil && v1 == nil {
+			return true
+		}
+
+		rm1, rm2 := v1.isRemoved(), v2.isRemoved()
+		if !v1.expired.IsZero() && !rm1 && v1.expired.Before(moment) {
+			v1.markRemoved()
+			rm1 = true
+		}
+
+		if !v2.expired.IsZero() && !rm2 && v2.expired.Before(moment) {
+			v2.markRemoved()
+			rm2 = true
+		}
+
+		if rm1 && !rm2 {
+			return false
+		} else if !rm1 && rm2 {
+			return true
+		} else if rm1 && rm2 {
+			return true
+		}
+
+		return v1.lastRead < v2.lastRead
+	})
+
+	idx := len(c.buff) - 1
+	for {
+		if c.buff[idx] != nil && !c.buff[idx].isRemoved() {
 			break
 		}
+		idx--
+	}
 
-		var shouldDel bool
-		if v.isRemoved() {
-			shouldDel = true
-		} else if !v.expired.IsZero() && v.expired.Before(moment) {
-			shouldDel = true
-		}
-
-		if !shouldDel {
+	if idx == len(c.buff)-1 {
+		idx = 0
+	}
+	for i, v := range c.buff {
+		if v.removed == 1 {
+			delete(c.keyMap, v.key)
 			continue
 		}
-
-		if subIdx == 0 {
-			subIdx = i + 1
-		}
-		for subIdx < len(c.buff) {
-			v2 := c.buff[subIdx]
-			if v2 == nil {
-				return
-			}
-			if v2.isRemoved() {
-				subIdx++
-				continue
-			} else if !v2.expired.IsZero() && v2.expired.Before(moment) {
-				v2.markRemoved()
-				subIdx++
-				continue
-			}
-
-			c.buff[i] = v2
-			c.buff[subIdx] = v
-			c.keyMap[v2.key] = i
-			c.keyMap[v.key] = subIdx
-			subIdx++
-			break
-		}
-		if subIdx == len(c.buff) {
-			return
-		}
+		c.keyMap[v.key] = i
 	}
 }
 
