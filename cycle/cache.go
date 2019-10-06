@@ -68,12 +68,12 @@ func (c *Cache) Store(key string, val interface{}, opts ...cacheGo.ValueOption) 
 		c.idx = 0
 	}
 }
+
 func (c *Cache) Remove(key string) {
 	v, ok := c.loadActCell(key)
 	if !ok {
 		return
 	}
-
 	v.markRemoved()
 }
 
@@ -115,54 +115,9 @@ func (c *cell) markRemoved() {
 func (c *cell) isRemoved() bool {
 	return atomic.LoadUint32(&c.removed) == 1
 }
+
 func (c *Cache) Purge() {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	c.purge()
-}
-
-func (c *Cache) purge() {
-	moment := time.Now()
-	var firstKey string
-	for i, v := range c.buff {
-		if v == nil || firstKey == v.key {
-			c.idx = i
-			break
-		}
-
-		var shouldDel bool
-		if v.isRemoved() {
-			shouldDel = true
-		} else if !v.expired.IsZero() && v.expired.Before(moment) {
-			shouldDel = true
-		}
-
-		if !shouldDel {
-			continue
-		}
-
-		if firstKey == "" {
-			firstKey = v.key
-		}
-		for j := i + 1; j < len(c.buff); j++ {
-			v2 := c.buff[j]
-			if v2 == nil {
-				break
-			}
-			if v2.isRemoved() {
-				continue
-			} else if !v2.expired.IsZero() && v2.expired.Before(moment) {
-				v2.markRemoved()
-				continue
-			}
-
-			c.buff[i] = v2
-			c.buff[j] = v
-			c.keyMap[v2.key] = i
-			c.keyMap[v.key] = j
-			break
-		}
-	}
+	return
 }
 
 func (c *cell) SetTTL(ttl time.Duration) {
