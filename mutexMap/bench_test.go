@@ -1,4 +1,4 @@
-package arc
+package mutexMap
 
 import (
 	"fmt"
@@ -6,12 +6,13 @@ import (
 	"testing"
 )
 
-func BenchmarkArc(b *testing.B) {
+func BenchmarkMap(b *testing.B) {
 	cases := []int{32, 256, 1024, 8192}
 	for _, pullSize := range cases {
 		name := fmt.Sprintf("size %4d", pullSize)
 		b.Run(name, func(b *testing.B) {
-			cache := New(pullSize)
+			cache := New()
+
 			b.Run("storing", func(b *testing.B) {
 				b.RunParallel(func(pb *testing.PB) {
 					var i int

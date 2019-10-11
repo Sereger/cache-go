@@ -23,6 +23,25 @@ func BenchmarkCycle(b *testing.B) {
 					}
 				})
 			})
+
+			b.Run("storing/removing", func(b *testing.B) {
+				b.RunParallel(func(pb *testing.PB) {
+					var (
+						i       int
+						lastKey string
+					)
+					for pb.Next() {
+						key := strconv.Itoa(i)
+						cache.Store(key, i)
+						if i%3 == 0 {
+							cache.Remove(lastKey)
+						}
+						i++
+						lastKey = key
+					}
+				})
+			})
+
 			b.Run("loading", func(b *testing.B) {
 				b.RunParallel(func(pb *testing.PB) {
 					var i int
