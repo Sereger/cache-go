@@ -51,6 +51,16 @@ func BenchmarkArc(b *testing.B) {
 					}
 				})
 			})
+			b.Run("inc", func(b *testing.B) {
+				b.RunParallel(func(pb *testing.PB) {
+					var i int
+					for pb.Next() {
+						key := strconv.Itoa(i)
+						cache.Inc(key)
+						i++
+					}
+				})
+			})
 		})
 	}
 }

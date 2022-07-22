@@ -31,3 +31,14 @@ func TestARCCache(t *testing.T) {
 		}
 	}
 }
+func TestARCCache_Inc(t *testing.T) {
+	cache := New(100)
+	key := "testKey"
+	var i int64
+	for i = 1; i < 1000; i++ {
+		v := cache.Inc(key)
+		if v != i {
+			t.Fatalf("v != i (%d != %d)", v, i)
+		}
+	}
+}

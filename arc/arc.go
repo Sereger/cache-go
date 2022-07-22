@@ -77,6 +77,45 @@ func (c *ARCCache) Store(key string, val interface{}, opts ...cacheGo.ValueOptio
 	c.idx++
 }
 
+func (c *ARCCache) Inc(key string, opts ...cacheGo.ValueOption) int64 {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	cl, ok := c.loadActCellNonBlocking(key)
+	var (
+		val int64
+		idx int
+	)
+	if ok {
+		atomic.AddUint32(&cl.reading, 1)
+		val, _ = cl.value.(int64)
+		idx = c.keyMap[key]
+	} else {
+		if c.idx == len(c.buff) {
+			c.purge()
+		}
+		old := c.buff[c.idx]
+		if old != nil {
+			delete(c.keyMap, old.key)
+		}
+
+		idx = c.idx
+		c.idx++
+	}
+
+	c.age++
+	val++
+	v := &cell{value: val, key: key, age: c.age}
+	for _, opt := range opts {
+		opt(v)
+	}
+
+	c.keyMap[key] = idx
+	c.buff[idx] = v
+
+	return val
+}
+
 func (c *ARCCache) Remove(key string) {
 	v, ok := c.loadActCell(key)
 	if !ok {
@@ -90,6 +129,10 @@ func (c *ARCCache) loadActCell(key string) (*cell, bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
+	return c.loadActCellNonBlocking(key)
+}
+
+func (c *ARCCache) loadActCellNonBlocking(key string) (*cell, bool) {
 	idx, ok := c.keyMap[key]
 	if !ok {
 		return nil, false
