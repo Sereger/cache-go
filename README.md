@@ -8,8 +8,8 @@ Simple example:
 package main
 
 import (
-	"github.com/Sereger/cache-go/arc"
-	cacheGC "github.com/Sereger/cache-go/gc"
+	"github.com/Sereger/cache-go/v2/arc"
+	cacheGC "github.com/Sereger/cache-go/v2/gc"
 	"time"
 )
 
