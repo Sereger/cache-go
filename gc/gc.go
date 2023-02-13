@@ -1,7 +1,6 @@
 package gc
 
 import (
-	"sync/atomic"
 	"time"
 )
 
@@ -11,23 +10,32 @@ type (
 	}
 	GC struct {
 		list   []cache
-		closed uint32
+		closed chan struct{}
 	}
 )
 
 func New(list ...cache) *GC {
-	return &GC{list: list}
+	return &GC{list: list, closed: make(chan struct{})}
 }
 
 func (gc *GC) AsyncPurge(timeout time.Duration) {
-	for atomic.LoadUint32(&gc.closed) == 0 {
-		time.Sleep(timeout)
-		gc.Purge()
-	}
+	go func() {
+		tik := time.NewTicker(timeout)
+		defer tik.Stop()
+
+		for {
+			select {
+			case <-tik.C:
+				gc.Purge()
+			case <-gc.closed:
+				return
+			}
+		}
+	}()
 }
 
 func (gc *GC) Close() error {
-	atomic.StoreUint32(&gc.closed, 1)
+	close(gc.closed)
 	return nil
 }
 
