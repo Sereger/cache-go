@@ -1,7 +1,7 @@
 package lru
 
 import (
-	cacheGo "github.com/Sereger/cache-go"
+	cacheGo "github.com/Sereger/cache-go/v2"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -9,33 +9,33 @@ import (
 )
 
 type (
-	Cache struct {
+	Cache[T any] struct {
 		lock   sync.RWMutex
 		keyMap map[string]int
-		buff   []*cell
+		buff   []*cell[T]
 		idx    int
 	}
 
-	cell struct {
+	cell[T any] struct {
 		key      string
-		value    interface{}
+		value    T
 		removed  uint32
 		lastRead int64
 		expired  time.Time
 	}
 )
 
-func New(n int) *Cache {
+func New[T any](n int) *Cache[T] {
 	if n < 8 {
 		n = 8
 	}
-	return &Cache{
+	return &Cache[T]{
 		keyMap: make(map[string]int),
-		buff:   make([]*cell, n),
+		buff:   make([]*cell[T], n),
 	}
 }
 
-func (c *Cache) Keys() []string {
+func (c *Cache[T]) Keys() []string {
 	result := make([]string, 0, len(c.buff))
 	for key := range c.keyMap {
 		result = append(result, key)
@@ -44,11 +44,11 @@ func (c *Cache) Keys() []string {
 	return result
 }
 
-func (c *Cache) Store(key string, val interface{}, opts ...cacheGo.ValueOption) {
+func (c *Cache[T]) Store(key string, val T, opts ...cacheGo.ValueOption) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	cell := &cell{key: key, value: val}
+	cell := &cell[T]{key: key, value: val}
 	for _, opt := range opts {
 		opt(cell)
 	}
@@ -70,7 +70,7 @@ func (c *Cache) Store(key string, val interface{}, opts ...cacheGo.ValueOption) 
 		c.purge()
 	}
 }
-func (c *Cache) Remove(key string) {
+func (c *Cache[T]) Remove(key string) {
 	v, ok := c.loadActCell(key)
 	if !ok {
 		return
@@ -78,7 +78,7 @@ func (c *Cache) Remove(key string) {
 	v.markRemoved()
 }
 
-func (c *Cache) loadActCell(key string) (*cell, bool) {
+func (c *Cache[T]) loadActCell(key string) (*cell[T], bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -100,29 +100,31 @@ func (c *Cache) loadActCell(key string) (*cell, bool) {
 	return v, true
 }
 
-func (c *Cache) Load(key string) (interface{}, bool) {
+func (c *Cache[T]) Load(key string) (T, bool) {
 	v, ok := c.loadActCell(key)
 	if !ok {
-		return nil, false
+		var result T
+		return result, false
 	}
 	atomic.StoreInt64(&v.lastRead, time.Now().Unix())
 	return v.value, true
 }
 
-func (c *cell) markRemoved() {
+func (c *cell[T]) markRemoved() {
 	atomic.StoreUint32(&c.removed, 1)
 }
 
-func (c *cell) isRemoved() bool {
+func (c *cell[T]) isRemoved() bool {
 	return atomic.LoadUint32(&c.removed) == 1
 }
-func (c *Cache) Purge() {
+
+func (c *Cache[T]) Purge() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	c.purge()
 }
 
-func (c *Cache) purge() {
+func (c *Cache[T]) purge() {
 	c.idx = 0
 	moment := time.Now()
 	sort.Slice(c.buff, func(i, j int) bool {
@@ -178,6 +180,6 @@ func (c *Cache) purge() {
 	}
 }
 
-func (c *cell) SetTTL(ttl time.Duration) {
+func (c *cell[T]) SetTTL(ttl time.Duration) {
 	c.expired = time.Now().Add(ttl)
 }

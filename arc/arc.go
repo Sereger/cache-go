@@ -1,7 +1,7 @@
 package arc
 
 import (
-	cacheGo "github.com/Sereger/cache-go"
+	cacheGo "github.com/Sereger/cache-go/v2"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -9,17 +9,17 @@ import (
 )
 
 type (
-	ARCCache struct {
+	Cache[T any] struct {
 		lock   sync.RWMutex
 		keyMap map[string]int
-		buff   []*cell
+		buff   []*cell[T]
 		idx    int
 		age    int
 	}
 
-	cell struct {
+	cell[T any] struct {
 		key     string
-		value   interface{}
+		value   T
 		age     int
 		reading uint32
 		removed uint32
@@ -27,18 +27,18 @@ type (
 	}
 )
 
-func New(n int) *ARCCache {
+func New[T any](n int) *Cache[T] {
 	if n < 8 {
 		n = 8
 	}
-	return &ARCCache{
+	return &Cache[T]{
 		keyMap: make(map[string]int),
-		buff:   make([]*cell, n),
+		buff:   make([]*cell[T], n),
 		age:    1,
 	}
 }
 
-func (c *ARCCache) Keys() []string {
+func (c *Cache[T]) Keys() []string {
 	result := make([]string, 0, len(c.buff))
 	for key := range c.keyMap {
 		result = append(result, key)
@@ -47,12 +47,12 @@ func (c *ARCCache) Keys() []string {
 	return result
 }
 
-func (c *ARCCache) Store(key string, val interface{}, opts ...cacheGo.ValueOption) {
+func (c *Cache[T]) Store(key string, val T, opts ...cacheGo.ValueOption) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	c.age++
-	v := &cell{value: val, key: key, age: c.age}
+	v := &cell[T]{value: val, key: key, age: c.age}
 
 	for _, opt := range opts {
 		opt(v)
@@ -77,18 +77,18 @@ func (c *ARCCache) Store(key string, val interface{}, opts ...cacheGo.ValueOptio
 	c.idx++
 }
 
-func (c *ARCCache) Inc(key string, opts ...cacheGo.ValueOption) int64 {
+func (c *Cache[T]) Atomic(key string, fn func(current T, ok bool) T, opts ...cacheGo.ValueOption) T {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	cl, ok := c.loadActCellNonBlocking(key)
 	var (
-		val int64
+		val T
 		idx int
 	)
 	if ok {
 		atomic.AddUint32(&cl.reading, 1)
-		val, _ = cl.value.(int64)
+		val = cl.value
 		idx = c.keyMap[key]
 	} else {
 		if c.idx == len(c.buff) {
@@ -104,8 +104,8 @@ func (c *ARCCache) Inc(key string, opts ...cacheGo.ValueOption) int64 {
 	}
 
 	c.age++
-	val++
-	v := &cell{value: val, key: key, age: c.age}
+	val = fn(val, ok)
+	v := &cell[T]{value: val, key: key, age: c.age}
 	for _, opt := range opts {
 		opt(v)
 	}
@@ -116,7 +116,7 @@ func (c *ARCCache) Inc(key string, opts ...cacheGo.ValueOption) int64 {
 	return val
 }
 
-func (c *ARCCache) Remove(key string) {
+func (c *Cache[T]) Remove(key string) {
 	v, ok := c.loadActCell(key)
 	if !ok {
 		return
@@ -125,14 +125,14 @@ func (c *ARCCache) Remove(key string) {
 	v.markRemoved()
 }
 
-func (c *ARCCache) loadActCell(key string) (*cell, bool) {
+func (c *Cache[T]) loadActCell(key string) (*cell[T], bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
 	return c.loadActCellNonBlocking(key)
 }
 
-func (c *ARCCache) loadActCellNonBlocking(key string) (*cell, bool) {
+func (c *Cache[T]) loadActCellNonBlocking(key string) (*cell[T], bool) {
 	idx, ok := c.keyMap[key]
 	if !ok {
 		return nil, false
@@ -151,23 +151,24 @@ func (c *ARCCache) loadActCellNonBlocking(key string) (*cell, bool) {
 	return v, true
 }
 
-func (c *ARCCache) Load(key string) (interface{}, bool) {
+func (c *Cache[T]) Load(key string) (T, bool) {
 	v, ok := c.loadActCell(key)
+	var result T
 	if !ok {
-		return nil, false
+		return result, false
 	}
 
 	atomic.AddUint32(&v.reading, 1)
 	return v.value, true
 }
 
-func (c *ARCCache) Purge() {
+func (c *Cache[T]) Purge() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	c.purge()
 }
 
-func (c *ARCCache) purge() {
+func (c *Cache[T]) purge() {
 	if c.idx <= (len(c.buff) / 3 * 2) {
 		return
 	}
@@ -259,14 +260,14 @@ func (c *ARCCache) purge() {
 	}
 }
 
-func (c *cell) markRemoved() {
+func (c *cell[T]) markRemoved() {
 	atomic.StoreUint32(&c.removed, 1)
 }
 
-func (c *cell) isRemoved() bool {
+func (c *cell[T]) isRemoved() bool {
 	return atomic.LoadUint32(&c.removed) == 1
 }
 
-func (c *cell) SetTTL(ttl time.Duration) {
+func (c *cell[T]) SetTTL(ttl time.Duration) {
 	c.expired = time.Now().Add(ttl)
 }

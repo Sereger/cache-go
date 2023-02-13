@@ -11,7 +11,7 @@ func BenchmarkArc(b *testing.B) {
 	for _, pullSize := range cases {
 		name := fmt.Sprintf("size %4d", pullSize)
 		b.Run(name, func(b *testing.B) {
-			cache := New(pullSize)
+			cache := New[int](pullSize)
 			b.Run("storing", func(b *testing.B) {
 				b.RunParallel(func(pb *testing.PB) {
 					var i int
@@ -56,7 +56,7 @@ func BenchmarkArc(b *testing.B) {
 					var i int
 					for pb.Next() {
 						key := strconv.Itoa(i)
-						cache.Inc(key)
+						cache.Atomic(key, func(v int, _ bool) int { v++; return v })
 						i++
 					}
 				})

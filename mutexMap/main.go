@@ -1,32 +1,32 @@
 package mutexMap
 
 import (
-	cacheGo "github.com/Sereger/cache-go"
+	cacheGo "github.com/Sereger/cache-go/v2"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
 type (
-	Cache struct {
+	Cache[T any] struct {
 		lock   sync.RWMutex
-		values map[string]*cell
+		values map[string]*cell[T]
 	}
 
-	cell struct {
-		value   interface{}
+	cell[T any] struct {
+		value   T
 		removed uint32
 		expired time.Time
 	}
 )
 
-func New() *Cache {
-	return &Cache{
-		values: make(map[string]*cell),
+func New[T any]() *Cache[T] {
+	return &Cache[T]{
+		values: make(map[string]*cell[T]),
 	}
 }
 
-func (c *Cache) Keys() []string {
+func (c *Cache[T]) Keys() []string {
 	result := make([]string, 0, len(c.values))
 	for key := range c.values {
 		result = append(result, key)
@@ -35,18 +35,18 @@ func (c *Cache) Keys() []string {
 	return result
 }
 
-func (c *Cache) Store(key string, val interface{}, opts ...cacheGo.ValueOption) {
+func (c *Cache[T]) Store(key string, val T, opts ...cacheGo.ValueOption) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	cell := &cell{value: val}
+	cell := &cell[T]{value: val}
 	for _, opt := range opts {
 		opt(cell)
 	}
 
 	c.values[key] = cell
 }
-func (c *Cache) Remove(key string) {
+func (c *Cache[T]) Remove(key string) {
 	v, ok := c.loadActCell(key)
 	if !ok {
 		return
@@ -54,7 +54,7 @@ func (c *Cache) Remove(key string) {
 	v.markRemoved()
 }
 
-func (c *Cache) loadActCell(key string) (*cell, bool) {
+func (c *Cache[T]) loadActCell(key string) (*cell[T], bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -75,28 +75,29 @@ func (c *Cache) loadActCell(key string) (*cell, bool) {
 	return v, true
 }
 
-func (c *Cache) Load(key string) (interface{}, bool) {
+func (c *Cache[T]) Load(key string) (T, bool) {
 	v, ok := c.loadActCell(key)
 	if !ok {
-		return nil, false
+		var result T
+		return result, false
 	}
 	return v.value, true
 }
 
-func (c *cell) markRemoved() {
+func (c *cell[T]) markRemoved() {
 	atomic.StoreUint32(&c.removed, 1)
 }
 
-func (c *cell) isRemoved() bool {
+func (c *cell[T]) isRemoved() bool {
 	return atomic.LoadUint32(&c.removed) == 1
 }
-func (c *Cache) Purge() {
+func (c *Cache[T]) Purge() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	c.purge()
 }
 
-func (c *Cache) purge() {
+func (c *Cache[T]) purge() {
 	delKeys := make([]string, 0, len(c.values))
 
 	for k, v := range c.values {
@@ -110,6 +111,6 @@ func (c *Cache) purge() {
 	}
 }
 
-func (c *cell) SetTTL(ttl time.Duration) {
+func (c *cell[T]) SetTTL(ttl time.Duration) {
 	c.expired = time.Now().Add(ttl)
 }

@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/Sereger/cache-go/arc"
+	"github.com/Sereger/cache-go/v2/arc"
 	"sort"
 	"strconv"
 )
 
 func main() {
-	cache := arc.New(32)
+	cache := arc.New[int](32)
 	for i := 1000; i > 0; i-- {
 		key := strconv.Itoa(i)
 		cache.Store(key, i)

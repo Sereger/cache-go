@@ -1,17 +1,21 @@
 package gc
 
 import (
-	"github.com/Sereger/cache-go"
 	"sync/atomic"
 	"time"
 )
 
-type GC struct {
-	list   []cache_go.Cache
-	closed uint32
-}
+type (
+	cache interface {
+		Purge()
+	}
+	GC struct {
+		list   []cache
+		closed uint32
+	}
+)
 
-func New(list ...cache_go.Cache) *GC {
+func New(list ...cache) *GC {
 	return &GC{list: list}
 }
 

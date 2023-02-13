@@ -1,14 +1,15 @@
 ### cache-go
+
 This package is implementation of `ARC` and `LRU` cache algorithm.
 
 Simple example:
+
 ```go
 package main
 
 import (
 	"github.com/Sereger/cache-go/arc"
 	cacheGC "github.com/Sereger/cache-go/gc"
-	"log"
 	"time"
 )
 
@@ -17,23 +18,23 @@ type SimpleData struct {
 }
 
 func main() {
-	c1 := arc.New(128)
-	c2 := arc.New(128)
+	c1 := arc.New[SimpleData](128)
+	c2 := arc.New[int](128)
 
 	gc := cacheGC.New(c1, c2)
 	defer gc.Close()
 
 	gc.AsyncPurge(8 * time.Second)
 
-	item := SimpleData{1, 2}
+	item := SimpleData{a: 1, b: 2}
 	c1.Store("myItem", item)
 }
 ```
 
-So, what's so special about the `ARC` cache?
-See example:
+So, what's so special about the `ARC` cache? See example:
+
 ```go
-cache := arc.New(32)
+cache := arc.New[int](32)
 for i := 1000; i > 0; i-- {
     key := strconv.Itoa(i)
     cache.Store(key, i)
@@ -55,12 +56,15 @@ fmt.Printf("keys: %v", keys)
 ```
 
 Output:
+
 ```bash
 keys: [1000 999 998 997 996 995 994 993 992 991 990 989 988 987 986 985 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1]
 ```
+
 So, we have collection with most usage and recently usage items.
 
 #### Benchmark
+
 This results on MacBook Pro (13-inch, 2019)
 ```bash
 pkg: github.com/Sereger/cache-go/arc
