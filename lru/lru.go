@@ -9,15 +9,15 @@ import (
 )
 
 type (
-	Cache[T any] struct {
+	Cache[K comparable, T any] struct {
 		lock   sync.RWMutex
-		keyMap map[string]int
-		buff   []*cell[T]
+		keyMap map[K]int
+		buff   []*cell[K, T]
 		idx    int
 	}
 
-	cell[T any] struct {
-		key      string
+	cell[K comparable, T any] struct {
+		key      K
 		value    T
 		removed  uint32
 		lastRead int64
@@ -25,18 +25,18 @@ type (
 	}
 )
 
-func New[T any](n int) *Cache[T] {
+func New[K comparable, T any](n int) *Cache[K, T] {
 	if n < 8 {
 		n = 8
 	}
-	return &Cache[T]{
-		keyMap: make(map[string]int),
-		buff:   make([]*cell[T], n),
+	return &Cache[K, T]{
+		keyMap: make(map[K]int),
+		buff:   make([]*cell[K, T], n),
 	}
 }
 
-func (c *Cache[T]) Keys() []string {
-	result := make([]string, 0, len(c.buff))
+func (c *Cache[K, T]) Keys() []K {
+	result := make([]K, 0, len(c.buff))
 	for key := range c.keyMap {
 		result = append(result, key)
 	}
@@ -44,11 +44,11 @@ func (c *Cache[T]) Keys() []string {
 	return result
 }
 
-func (c *Cache[T]) Store(key string, val T, opts ...cacheGo.ValueOption) {
+func (c *Cache[K, T]) Store(key K, val T, opts ...cacheGo.ValueOption) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	cell := &cell[T]{key: key, value: val}
+	cell := &cell[K, T]{key: key, value: val}
 	for _, opt := range opts {
 		opt(cell)
 	}
@@ -70,7 +70,7 @@ func (c *Cache[T]) Store(key string, val T, opts ...cacheGo.ValueOption) {
 		c.purge()
 	}
 }
-func (c *Cache[T]) Remove(key string) {
+func (c *Cache[K, T]) Remove(key K) {
 	v, ok := c.loadActCell(key)
 	if !ok {
 		return
@@ -78,7 +78,7 @@ func (c *Cache[T]) Remove(key string) {
 	v.markRemoved()
 }
 
-func (c *Cache[T]) loadActCell(key string) (*cell[T], bool) {
+func (c *Cache[K, T]) loadActCell(key K) (*cell[K, T], bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -100,7 +100,7 @@ func (c *Cache[T]) loadActCell(key string) (*cell[T], bool) {
 	return v, true
 }
 
-func (c *Cache[T]) Load(key string) (T, bool) {
+func (c *Cache[K, T]) Load(key K) (T, bool) {
 	v, ok := c.loadActCell(key)
 	if !ok {
 		var result T
@@ -110,21 +110,21 @@ func (c *Cache[T]) Load(key string) (T, bool) {
 	return v.value, true
 }
 
-func (c *cell[T]) markRemoved() {
+func (c *cell[K, T]) markRemoved() {
 	atomic.StoreUint32(&c.removed, 1)
 }
 
-func (c *cell[T]) isRemoved() bool {
+func (c *cell[K, T]) isRemoved() bool {
 	return atomic.LoadUint32(&c.removed) == 1
 }
 
-func (c *Cache[T]) Purge() {
+func (c *Cache[K, T]) Purge() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	c.purge()
 }
 
-func (c *Cache[T]) purge() {
+func (c *Cache[K, T]) purge() {
 	c.idx = 0
 	moment := time.Now()
 	sort.Slice(c.buff, func(i, j int) bool {
@@ -180,6 +180,6 @@ func (c *Cache[T]) purge() {
 	}
 }
 
-func (c *cell[T]) SetTTL(ttl time.Duration) {
+func (c *cell[K, T]) SetTTL(ttl time.Duration) {
 	c.expired = time.Now().Add(ttl)
 }

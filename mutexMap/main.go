@@ -8,9 +8,9 @@ import (
 )
 
 type (
-	Cache[T any] struct {
+	Cache[K comparable, T any] struct {
 		lock   sync.RWMutex
-		values map[string]*cell[T]
+		values map[K]*cell[T]
 	}
 
 	cell[T any] struct {
@@ -20,14 +20,14 @@ type (
 	}
 )
 
-func New[T any]() *Cache[T] {
-	return &Cache[T]{
-		values: make(map[string]*cell[T]),
+func New[K comparable, T any]() *Cache[K, T] {
+	return &Cache[K, T]{
+		values: make(map[K]*cell[T]),
 	}
 }
 
-func (c *Cache[T]) Keys() []string {
-	result := make([]string, 0, len(c.values))
+func (c *Cache[K, T]) Keys() []K {
+	result := make([]K, 0, len(c.values))
 	for key := range c.values {
 		result = append(result, key)
 	}
@@ -35,7 +35,7 @@ func (c *Cache[T]) Keys() []string {
 	return result
 }
 
-func (c *Cache[T]) Store(key string, val T, opts ...cacheGo.ValueOption) {
+func (c *Cache[K, T]) Store(key K, val T, opts ...cacheGo.ValueOption) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -46,7 +46,7 @@ func (c *Cache[T]) Store(key string, val T, opts ...cacheGo.ValueOption) {
 
 	c.values[key] = cell
 }
-func (c *Cache[T]) Remove(key string) {
+func (c *Cache[K, T]) Remove(key K) {
 	v, ok := c.loadActCell(key)
 	if !ok {
 		return
@@ -54,7 +54,7 @@ func (c *Cache[T]) Remove(key string) {
 	v.markRemoved()
 }
 
-func (c *Cache[T]) loadActCell(key string) (*cell[T], bool) {
+func (c *Cache[K, T]) loadActCell(key K) (*cell[T], bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -75,7 +75,7 @@ func (c *Cache[T]) loadActCell(key string) (*cell[T], bool) {
 	return v, true
 }
 
-func (c *Cache[T]) Load(key string) (T, bool) {
+func (c *Cache[K, T]) Load(key K) (T, bool) {
 	v, ok := c.loadActCell(key)
 	if !ok {
 		var result T
@@ -91,14 +91,14 @@ func (c *cell[T]) markRemoved() {
 func (c *cell[T]) isRemoved() bool {
 	return atomic.LoadUint32(&c.removed) == 1
 }
-func (c *Cache[T]) Purge() {
+func (c *Cache[K, T]) Purge() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	c.purge()
 }
 
-func (c *Cache[T]) purge() {
-	delKeys := make([]string, 0, len(c.values))
+func (c *Cache[K, T]) purge() {
+	delKeys := make([]K, 0, len(c.values))
 
 	for k, v := range c.values {
 		if v.isRemoved() {

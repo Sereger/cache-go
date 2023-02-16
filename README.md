@@ -18,8 +18,8 @@ type SimpleData struct {
 }
 
 func main() {
-	c1 := arc.New[SimpleData](128)
-	c2 := arc.New[int](128)
+	c1 := arc.New[string, SimpleData](128)
+	c2 := arc.New[string, int](128)
 
 	gc := cacheGC.New(c1, c2)
 	defer gc.Close()
@@ -34,7 +34,7 @@ func main() {
 So, what's so special about the `ARC` cache? See example:
 
 ```go
-cache := arc.New[int](32)
+cache := arc.New[string, int](32)
 for i := 1000; i > 0; i-- {
     key := strconv.Itoa(i)
     cache.Store(key, i)

@@ -11,8 +11,8 @@ type SimpleData struct {
 }
 
 func main() {
-	c1 := arc.New[SimpleData](128)
-	c2 := arc.New[SimpleData](128)
+	c1 := arc.New[string, SimpleData](128)
+	c2 := arc.New[string, SimpleData](128)
 
 	gc := cacheGC.New(c1, c2)
 	defer gc.Close()

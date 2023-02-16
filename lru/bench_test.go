@@ -11,7 +11,7 @@ func BenchmarkLRU(b *testing.B) {
 	for _, pullSize := range cases {
 		name := fmt.Sprintf("size %4d", pullSize)
 		b.Run(name, func(b *testing.B) {
-			cache := New[int](pullSize)
+			cache := New[string, int](pullSize)
 
 			b.Run("storing", func(b *testing.B) {
 				b.RunParallel(func(pb *testing.PB) {

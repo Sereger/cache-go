@@ -6,7 +6,7 @@ import (
 )
 
 func TestLRUCache(t *testing.T) {
-	cache := New[int](100)
+	cache := New[string, int](100)
 	for i := 1000; i > 0; i-- {
 		key := strconv.Itoa(i)
 		cache.Store(key, i)

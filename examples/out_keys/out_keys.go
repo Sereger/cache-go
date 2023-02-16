@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	cache := arc.New[int](32)
+	cache := arc.New[string, int](32)
 	for i := 1000; i > 0; i-- {
 		key := strconv.Itoa(i)
 		cache.Store(key, i)

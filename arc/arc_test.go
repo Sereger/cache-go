@@ -6,7 +6,7 @@ import (
 )
 
 func TestARCCache(t *testing.T) {
-	cache := New[int](100)
+	cache := New[string, int](100)
 	for i := 1000; i > 0; i-- {
 		key := strconv.Itoa(i)
 		cache.Store(key, i)
@@ -32,7 +32,7 @@ func TestARCCache(t *testing.T) {
 	}
 }
 func TestARCCache_Inc(t *testing.T) {
-	cache := New[int](100)
+	cache := New[string, int](100)
 	key := "testKey"
 	for i := 1; i < 1000; i++ {
 		v := cache.Atomic(key, func(v int, _ bool) int {
