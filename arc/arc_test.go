@@ -60,7 +60,6 @@ func TestARCCache_Values(t *testing.T) {
 	}
 
 	for i := 0; i < 100; i++ {
-
 		if vals[i] != i {
 			t.Fatalf("incorrect values in index [%d], got [%d] expected %d", i, vals[i], i)
 		}
