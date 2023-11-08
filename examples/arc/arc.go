@@ -1,9 +1,10 @@
 package main
 
 import (
+	"time"
+
 	"github.com/Sereger/cache-go/v2/arc"
 	cacheGC "github.com/Sereger/cache-go/v2/gc"
-	"time"
 )
 
 type SimpleData struct {

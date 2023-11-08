@@ -1,4 +1,4 @@
-package mutexMap
+package mutexMap // nolint: stylecheck
 
 import (
 	"fmt"

@@ -31,6 +31,7 @@ func TestARCCache(t *testing.T) {
 		}
 	}
 }
+
 func TestARCCache_Inc(t *testing.T) {
 	cache := New[string, int](100)
 	key := "testKey"
@@ -42,6 +43,26 @@ func TestARCCache_Inc(t *testing.T) {
 
 		if v != i {
 			t.Fatalf("v != i (%d != %d)", v, i)
+		}
+	}
+}
+
+func TestARCCache_Values(t *testing.T) {
+	cache := New[string, int](100)
+	for i := 0; i < 100; i++ {
+		key := strconv.Itoa(i)
+		cache.Store(key, i)
+	}
+
+	vals := cache.Values()
+	if len(vals) != 100 {
+		t.Fatalf("incorrect count values [%d] expected 100", len(vals))
+	}
+
+	for i := 0; i < 100; i++ {
+
+		if vals[i] != i {
+			t.Fatalf("incorrect values in index [%d], got [%d] expected %d", i, vals[i], i)
 		}
 	}
 }

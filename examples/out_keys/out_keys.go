@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/Sereger/cache-go/v2/arc"
 	"sort"
 	"strconv"
+
+	"github.com/Sereger/cache-go/v2/arc"
 )
 
 func main() {

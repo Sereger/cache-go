@@ -1,10 +1,11 @@
-package mutexMap
+package mutexMap // nolint: stylecheck
 
 import (
-	cacheGo "github.com/Sereger/cache-go/v2"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	cacheGo "github.com/Sereger/cache-go/v2"
 )
 
 type (
@@ -30,6 +31,18 @@ func (c *Cache[K, T]) Keys() []K {
 	result := make([]K, 0, len(c.values))
 	for key := range c.values {
 		result = append(result, key)
+	}
+
+	return result
+}
+
+func (c *Cache[K, T]) Values() []T {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	result := make([]T, 0, len(c.values))
+	for _, v := range c.values {
+		result = append(result, v.value)
 	}
 
 	return result

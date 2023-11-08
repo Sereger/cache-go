@@ -1,0 +1,49 @@
+linters-settings:
+  govet:
+    check-shadowing: false
+  golint:
+    min-confidence: 0
+  gocyclo:
+    min-complexity: 25
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  errcheck:
+    check-type-assertions: true
+  gocritic:
+    disabled-checks:
+      - ifElseChain
+  nakedret:
+    max-func-lines: 15
+
+run:
+  deadline: 3m
+  issues-exit-code: 1
+  tests: true
+  go: '1.18'
+  allow-parallel-runners: true
+  concurrency: 4
+
+linters:
+  enable:
+    - gocritic
+    - stylecheck
+    - goimports
+    - gosec
+    - unconvert
+    - gochecknoinits
+    - gosec
+    - nakedret
+    - whitespace
+    - gosimple
+    - dogsled
+  disable:
+    - structcheck
+    - unparam
+    - bodyclose
+    - golint
+    - rowserrcheck
+    - maligned
+    - lll
+    - dupl
+    - gochecknoglobals

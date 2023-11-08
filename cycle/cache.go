@@ -1,10 +1,11 @@
 package cycle
 
 import (
-	cacheGo "github.com/Sereger/cache-go/v2"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	cacheGo "github.com/Sereger/cache-go/v2"
 )
 
 type (
@@ -35,9 +36,24 @@ func New[K comparable, T any](n int) *Cache[K, T] {
 }
 
 func (c *Cache[K, T]) Keys() []K {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
 	result := make([]K, 0, len(c.buff))
 	for key := range c.keyMap {
 		result = append(result, key)
+	}
+
+	return result
+}
+
+func (c *Cache[K, T]) Values() []T {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	result := make([]T, 0, c.idx)
+	for i := 0; i < c.idx; i++ {
+		result = append(result, c.buff[i].value)
 	}
 
 	return result
