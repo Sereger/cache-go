@@ -28,9 +28,21 @@ func New[K comparable, T any]() *Cache[K, T] {
 }
 
 func (c *Cache[K, T]) Keys() []K {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
 	result := make([]K, 0, len(c.values))
-	for key := range c.values {
-		result = append(result, key)
+	for k, v := range c.values {
+		if v.isRemoved() {
+			continue
+		}
+
+		if !v.expired.IsZero() && v.expired.Before(time.Now()) {
+			v.markRemoved()
+			continue
+		}
+
+		result = append(result, k)
 	}
 
 	return result
@@ -42,6 +54,15 @@ func (c *Cache[K, T]) Values() []T {
 
 	result := make([]T, 0, len(c.values))
 	for _, v := range c.values {
+		if v.isRemoved() {
+			continue
+		}
+
+		if !v.expired.IsZero() && v.expired.Before(time.Now()) {
+			v.markRemoved()
+			continue
+		}
+
 		result = append(result, v.value)
 	}
 

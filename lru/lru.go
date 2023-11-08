@@ -40,9 +40,19 @@ func (c *Cache[K, T]) Keys() []K {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	result := make([]K, 0, len(c.buff))
-	for key := range c.keyMap {
-		result = append(result, key)
+	result := make([]K, 0, c.idx)
+	for i := 0; i < c.idx; i++ {
+		v := c.buff[i]
+		if v.isRemoved() {
+			continue
+		}
+
+		if !v.expired.IsZero() && v.expired.Before(time.Now()) {
+			v.markRemoved()
+			continue
+		}
+
+		result = append(result, c.buff[i].key)
 	}
 
 	return result
@@ -54,6 +64,16 @@ func (c *Cache[K, T]) Values() []T {
 
 	result := make([]T, 0, c.idx)
 	for i := 0; i < c.idx; i++ {
+		v := c.buff[i]
+		if v.isRemoved() {
+			continue
+		}
+
+		if !v.expired.IsZero() && v.expired.Before(time.Now()) {
+			v.markRemoved()
+			continue
+		}
+
 		result = append(result, c.buff[i].value)
 	}
 
